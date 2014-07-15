@@ -433,3 +433,17 @@ uint8_t NMEA::getMinute() {
 uint8_t NMEA::getSecond() {
 	return _time_s;
 }
+
+/*!
+ *  Calculates the day of the week (0 ... 6, 0 being Sunday) from the current
+ *  date values.
+ */
+uint8_t NMEA::getDow() {
+   static int t[] = {0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4};
+    int y = _date_y + 2000;
+    int m = _date_m;
+    int d = _date_d;
+
+    y -= m < 3;
+    return (y + y/4 - y/100 + y/400 + t[m-1] + d) % 7;
+}

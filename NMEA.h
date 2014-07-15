@@ -103,6 +103,7 @@ class NMEA {
 		uint8_t getHour();
 		uint8_t getMinute();
 		uint8_t getSecond();
+        uint8_t getDow();
 
 		bool isLocked();
 		bool isUpdated();
