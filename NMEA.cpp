@@ -30,18 +30,43 @@
 
 #include <NMEA.h>
 
+/*! Default constructor
+ *  ===================
+ * This constructor defaults the NMEA parser to using the Serial object.
+ */
 NMEA::NMEA() {
 	_dev = &Serial;
 }
 
+/*! Device specific constructor
+ *  ===========================
+ *  This allows you to pass a specific serial object to the parser.  It is
+ *  your responsibility to ensure that the serial object is configured for
+ *  38400 baud (or the baud of your GPS module) and has had "begin" called on it.
+ */
 NMEA::NMEA(Stream &dev) {
 	_dev = &dev;
 }
 
+/*! Initialize the processor
+ *  ========================
+ *  Pre-configures any required variables.  Calling this
+ *  before any processing is done is required.
+ */
 void NMEA::begin() {
 	_frameStart = false;
 }
 
+/*! Process incoming messages
+ *  =========================
+ *  This function is the main heart of the NMEA processor.  It
+ *  receives characters from the serial device, identifies the frame
+ *  wrapper characters, and stores the frame data into a buffer.  When
+ *  the frame is complete it calls the relevant decoder function to
+ *  handle the data.
+ *
+ *  This function must be called frequently to process the data.
+ */
 void NMEA::process() {
 	while (_dev->available()) {
 		char c = _dev->read();
@@ -167,14 +192,26 @@ void NMEA::processGPRMC() {
 
 }
 
+/*! getLatitude()
+ *  =============
+ *  Returns the current latitude in degrees
+ */
 double NMEA::getLatitude() {
 	return _lat;
 }
 
+/*! getLongitude()
+ *  ==============
+ *  Returns the current longitude in degrees
+ */
 double NMEA::getLongitude() {
 	return _long;
 }
 
+/*! isLocked()
+ *  ==========
+ *  Returns true if the receiver is locked on, false otherwise.
+ */
 bool NMEA::isLocked() {
 	return _ok;
 }
@@ -229,12 +266,23 @@ double NMEA::pos2dec(char *pos) {
 	return deg + (mins / 60.0);
 }
 
+/*! isUpdated()
+ *  ===========
+ *  Returns true if the processor has received and processed a new
+ *  valid message.  Resets the updated flag internally.
+ */
 bool NMEA::isUpdated() {
 	bool u = _updated;
 	_updated = false;
 	return u;
 }
 
+/*! getSpeed(knots)
+ *  ===============
+ *  Returns the current calculated speed.  If true is passed as a parameter it returns
+ *  the speed in Knots.  If false is passed, or no parameter is used, it returns the
+ *  speed in kilometers per hour.
+ */
 double NMEA::getSpeed(bool knots) {
 	if (knots) {
 		return _speedN;
@@ -243,6 +291,12 @@ double NMEA::getSpeed(bool knots) {
 	}
 }
 
+/*! getBearing(magnetic)
+ *  ====================
+ *  Returns the current calculated bearing or heading.  If true is passed as a parameter
+ *  it returns the bearing to magnetic north.  If false is passed, or no parameter is used,
+ *  it returns the bearing to true north.
+ */
 double NMEA::getBearing(bool mag) {
 	if (mag) {
 		return _bearingM;
@@ -306,46 +360,92 @@ void NMEA::processGPGGA() {
 	_height_units = hu[0];
 }
 
+/*! getAltitude()
+ *  =============
+ *  Returns the current height above sea level.  The units are not defined, but
+ *  can be obtained with the getAltutudeUnits() function.
+ */
 double NMEA::getAltitude() {
 	return _altitude;
 }
+
+/*! getAltitudeUnits()
+ *  ==================
+ *  Returns the units used for the height above sea level.  Usually 'M' for meters.
+ */
 char NMEA::getAltitudeUnits() {
 	return _altitude_units;
 }
 
+/*! getEllipsoidHeight()
+ *  ====================
+ *  Returns the height above a WGS84 ellipsoid.  The units are not defined, but
+ *  can be obtained with the getEllipsoidHeightUnits() function.
+ */
 double NMEA::getEllipsoidHeight() {
 	return _height;
 }
 
+/*! getEllipsoidHeightUnits()
+ *  =========================
+ *  Returns the units used for the height above a WGS84 ellipsoid.  Usually 'M' for meters.
+ */
 char NMEA::getEllipsoidHeightUnits() {
 	return _height_units;
 }
 
+/*! getSatellites()
+ *  ===============
+ *  Returns the number of currently locked satellites.
+ */
 uint8_t NMEA::getSatellites() {
 	return _satellites;
 }
 
-
+/*! getDay()
+ *  ========
+ *  Returns the current day of the month (1 ... 31).
+ */
 uint8_t NMEA::getDay() {
 	return _date_d;
 }
 
+/*! getMonth()
+ *  ==========
+ *  Returns the current month number (1 ... 12).
+ */
 uint8_t NMEA::getMonth() {
 	return _date_m;
 }
 
+/*! getYear()
+ *  =========
+ *  Returns the current year (2000 ... 2099).
+ */
 uint16_t NMEA::getYear() {
 	return _date_y + 2000;
 }
 
+/*! getHour()
+ *  =========
+ *  Returns the current hour of the day (0 ... 23).
+ */
 uint8_t NMEA::getHour() {
 	return _time_h;
 }
 
+/*! getMinute()
+ *  =========
+ *  Returns the current minutes (0 ... 59).
+ */
 uint8_t NMEA::getMinute() {
 	return _time_m;
 }
 
+/*! getSecond()
+ *  =========
+ *  Returns the current seconds (0 ... 59).
+ */
 uint8_t NMEA::getSecond() {
 	return _time_s;
 }
