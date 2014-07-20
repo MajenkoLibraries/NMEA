@@ -93,7 +93,7 @@ void NMEA::processMessage() {
 	if (star != NULL) {
 		*star = 0;
 	}
-	
+
 	if (!strncmp(_buffer, "GPRMC", 5)) {
 		processGPRMC();
 		return;
@@ -447,3 +447,68 @@ uint8_t NMEA::getDow() {
     y -= m < 3;
     return (y + y/4 - y/100 + y/400 + t[m-1] + d) % 7;
 }
+
+void NMEA::csWrite(uint8_t c, uint8_t &cka, uint8_t &ckb) {
+    cka += c;
+    ckb += cka;
+    _dev->write(c);
+}
+
+/*! \name uBLOX NEO-6
+ *  These functions are specifically for working with the uBLOX NEO-6 series of GPS
+ *  modules, such as the one on the Sparkfun GPS shield.
+ */
+
+/**@{*/
+
+/*! Enable ECO power mode.  This is a half-way house between full power and power saving
+ *  mode.  It uses more power during acquisition but saves power during idle time.
+ */
+void NMEA::enableEco() {
+    uint8_t cka = 0, ckb = 0;
+    _dev->write(0xB5);
+    _dev->write(0x62);
+    csWrite(0x06, cka, ckb);
+    csWrite(0x11, cka, ckb);
+    csWrite(0x02, cka, ckb);
+    csWrite(0x00, cka, ckb);
+    csWrite(0x08, cka, ckb);
+    csWrite(0x04, cka, ckb);
+    _dev->write(cka);
+    _dev->write(ckb);
+}
+
+/*! Power save mode uses the minimum power.  Everything takes longer though.
+ */
+void NMEA::enablePowerSave() {
+    uint8_t cka = 0, ckb = 0;
+    _dev->write(0xB5);
+    _dev->write(0x62);
+    csWrite(0x06, cka, ckb);
+    csWrite(0x11, cka, ckb);
+    csWrite(0x02, cka, ckb);
+    csWrite(0x00, cka, ckb);
+    csWrite(0x08, cka, ckb);
+    csWrite(0x01, cka, ckb);
+    _dev->write(cka);
+    _dev->write(ckb);
+}
+
+/*! Full power is what it says - it uses the maximum power all the time.  Everything works
+ *  much faster; satellites are found more reliably, etc.
+ */
+void NMEA::enableFullPower() {
+    uint8_t cka = 0, ckb = 0;
+    _dev->write(0xB5);
+    _dev->write(0x62);
+    csWrite(0x06, cka, ckb);
+    csWrite(0x11, cka, ckb);
+    csWrite(0x02, cka, ckb);
+    csWrite(0x00, cka, ckb);
+    csWrite(0x08, cka, ckb);
+    csWrite(0x00, cka, ckb);
+    _dev->write(cka);
+    _dev->write(ckb);
+}
+
+/**@}*/

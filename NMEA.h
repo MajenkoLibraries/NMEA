@@ -81,6 +81,8 @@ class NMEA {
 		double pos2dec(char *pos);
 		void triplet(char *, uint8_t &, uint8_t &, uint8_t &);
 
+        void csWrite(uint8_t c, uint8_t &csa, uint8_t &csb);
+
 	public:
 		NMEA();
 		NMEA(Stream &dev);
@@ -107,6 +109,11 @@ class NMEA {
 
 		bool isLocked();
 		bool isUpdated();
+
+        // uBLOX specific commands
+        void enableEco();
+        void enablePowerSave();
+        void enableFullPower();
 };
 
 #endif
