@@ -1,0 +1,7 @@
+Doxyfile libraries/Sensors/NMEA/
+LICENSE.md usr/share/doc/libnmea/
+NMEA.cpp libraries/Sensors/NMEA/
+NMEA.h libraries/Sensors/NMEA/
+README.md usr/share/doc/libnmea/
+latex/.gitignore libraries/Sensors/NMEA/latex
+latex/refman.pdf libraries/Sensors/NMEA/latex
