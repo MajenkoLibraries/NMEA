@@ -7,6 +7,7 @@ Build-Depends: debhelper (>= 8.0.0)
 Standards-Version: 3.9.4
 
 Package: libnmea
+Provides: NMEA.h
 Architecture: all
 Description: NMEA library
 
