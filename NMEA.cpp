@@ -44,6 +44,7 @@ NMEA::NMEA() {
  */
 NMEA::NMEA(Stream &dev) {
 	_dev = &dev;
+    _updateCallback = NULL;
 }
 
 /*!
@@ -138,6 +139,10 @@ void NMEA::processGPVTG() {
 				break;
 		}
 	}
+
+    if (_updateCallback != NULL) {
+        _updateCallback();
+    }
 }
 
 void NMEA::processGPRMC() {
@@ -186,6 +191,9 @@ void NMEA::processGPRMC() {
 	tok = comma();
 	_mgvard = tok[0];
 
+    if (_updateCallback != NULL) {
+        _updateCallback();
+    }
 }
 
 /*!
@@ -348,6 +356,10 @@ void NMEA::processGPGGA() {
 	_height = strtod(height, NULL);
 	char *hu = comma();
 	_height_units = hu[0];
+
+    if (_updateCallback != NULL) {
+        _updateCallback();
+    }
 }
 
 /*!

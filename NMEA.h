@@ -64,6 +64,9 @@ class NMEA {
 		char _altitude_units;
 		double _height;
 		char _height_units;
+
+        void (*_updateCallback)();
+
 		
 		uint8_t _time_h;
 		uint8_t _time_m;
@@ -114,6 +117,10 @@ class NMEA {
         void enableEco();
         void enablePowerSave();
         void enableFullPower();
+
+        // Event Handling
+        void onUpdate(void (*func)()) { _updateCallback = func; }
+
 };
 
 #endif
