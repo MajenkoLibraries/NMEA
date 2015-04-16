@@ -498,6 +498,21 @@ void NMEA::csWrite(uint8_t c, uint8_t &cka, uint8_t &ckb) {
     _dev->write(c);
 }
 
+/*!
+ *  Attach a callback routine which is executed whenever the
+ *  GPS information is updated.
+ *
+ *      void myCallback() {
+ *          // Do something with the GPS data
+ *      }
+ *
+ *      myGps.onUpdate(myCallback);
+ */
+
+void NMEA::onUpdate(void (*func)()) {
+    _updateCallback = func;
+}
+
 /*! \name uBLOX NEO-6
  *  These functions are specifically for working with the uBLOX NEO-6 series of GPS
  *  modules, such as the one on the Sparkfun GPS shield.

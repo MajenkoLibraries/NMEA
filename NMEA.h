@@ -119,7 +119,7 @@ class NMEA {
         void enableFullPower();
 
         // Event Handling
-        void onUpdate(void (*func)()) { _updateCallback = func; }
+        void onUpdate(void (*func)());
 
 };
 
