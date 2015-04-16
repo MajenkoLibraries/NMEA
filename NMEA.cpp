@@ -66,6 +66,7 @@ void NMEA::begin() {
  */
 void NMEA::process() {
 	while (_dev->available()) {
+        _lastRx = millis();
 		char c = _dev->read();
 		if (c == '$') {
 			_bufptr = 0;
@@ -85,6 +86,16 @@ void NMEA::process() {
 			_buffer[_bufptr] = 0;
 		}
 	}
+
+    if (_doUpdate) {
+        if (millis() - _lastRx > 1) {
+            _doUpdate = false;
+            if (_updateCallback != NULL) {
+                _updateCallback();
+            }
+            _updated = true;
+        }
+    }
 }
 
 void NMEA::processMessage() {
@@ -97,26 +108,32 @@ void NMEA::processMessage() {
 
 	if (!strncmp(_buffer, "GPRMC", 5)) {
 		processGPRMC();
+        _doUpdate = true;
+        setOffsetTime(_offset);
 		return;
 	}
 
 	if (!strncmp(_buffer, "GPVTG", 5)) {
 		processGPVTG();
+        _doUpdate = true;
+        setOffsetTime(_offset);
 		return;
 	}
 
 	if (!strncmp(_buffer, "GPGGA", 5)) {
 		processGPGGA();
+        _doUpdate = true;
+        setOffsetTime(_offset);
 		return;
 	}
 }
+
 
 void NMEA::processGPVTG() {
 
 	char *tok;
 	char *type;
 
-	_updated = true;
 
 	tok = comma(_buffer); // Discard GPVTG
     if (tok == NULL) {
@@ -146,21 +163,19 @@ void NMEA::processGPVTG() {
 		}
 	}
 
-    if (_updateCallback != NULL) {
-        _updateCallback();
-    }
 }
+// $GPGLL,5155.32591,N,00234.41370,W,194533.00,A,A*7E
 
 void NMEA::processGPRMC() {
+    // $GPRMC,194533.00,A,5155.32591,N,00234.41370,W,0.159,,160415,,,A*6D
 	char *tok;
-	_updated = true;
-	tok = comma(_buffer);
+	tok = comma(_buffer);                       // GPRMC
     if (tok == NULL) return;
-	tok = comma();
+	tok = comma();  //                          // Time
     if (tok == NULL) return;
 	triplet(tok, _time_h, _time_m, _time_s);
 	
-	tok = comma();
+	tok = comma();                              // Acquired
     if (tok == NULL) return;
 	if (tok[0] == 'A') {
 		_ok = true;
@@ -170,48 +185,45 @@ void NMEA::processGPRMC() {
 		return;
 	}
 
-	tok = comma();
+	tok = comma();                              // Latitude
     if (tok == NULL) return;
 	_lat = pos2dec(tok);
-	tok = comma();
+	tok = comma();                              // N/S
     if (tok == NULL) return;
 	if (tok[0] == 'S') {
 		_lat = -_lat;
 	}
 	_latd = tok[0];
 
-	tok = comma();
+	tok = comma();                              // Longitude
     if (tok == NULL) return;
 	_long = pos2dec(tok);
-	tok = comma();
+	tok = comma();                              // EW
     if (tok == NULL) return;
-	if (tok[0] == 'E') {
+	if (tok[0] == 'W') {
 		_long = -_long;
 	}
 	_longd = tok[0];
 
-	tok = comma();
+	tok = comma();                              // Speed
     if (tok == NULL) return;
 	_speedN = strtod(tok, NULL);
 
-	tok = comma();
+	tok = comma();                              // Bearing
     if (tok == NULL) return;
 	_bearingT = strtod(tok, NULL);
 
-	tok = comma();
+	tok = comma();                              // Date
     if (tok == NULL) return;
 	triplet(tok, _date_d, _date_m, _date_y);
 
-	tok = comma();
+	tok = comma();                              // Pressure
     if (tok == NULL) return;
 	_mgvar = strtod(tok, NULL);
 	tok = comma();
     if (tok == NULL) return;
 	_mgvard = tok[0];
 
-    if (_updateCallback != NULL) {
-        _updateCallback();
-    }
 }
 
 /*!
@@ -327,34 +339,38 @@ void NMEA::triplet(char *data, uint8_t &a, uint8_t &b, uint8_t &c) {
 	c = (data[4] - '0') * 10 + (data[5] - '0');
 }
 
+
+
 void NMEA::processGPGGA() {
-	_updated = true;
-		
 	
-	char *tok = comma(_buffer); // Discard GPGGA
+//  $GPGGA,194533.00,5155.32591,N,00234.41370,W,1,10,1.24,63.1,M,48.6,M,,*73
+//   GPGGA,200022.00,5155.322853,1,12,05,15,042,29,09,08,322,33,16,41,298,34,18,01,144,
+
+
+	char *tok = comma(_buffer); // GPGGA
     if (tok == NULL) return;
 
-	char *time = comma();
+	char *time = comma();       // Time
     if (time == NULL) return;
 	triplet(time, _time_h, _time_m, _time_s);
 
-	char *lat = comma();
+	char *lat = comma();        // Latitude
     if (lat == NULL) return;
 	_lat = pos2dec(lat);
-	char *latd = comma();
+	char *latd = comma();       // N/S
     if (latd == NULL) return;
 	_latd = latd[0];
 	if (_latd == 'S') {
 		_lat = -_lat;
 	}
 
-	char *longitude = comma();
+	char *longitude = comma();  // Longitude
     if (longitude == NULL) return;
 	_long = pos2dec(longitude);
-	char *longd = comma();
+	char *longd = comma();      // W/E
     if (longd == NULL) return;
 	_longd = longd[0];
-	if (_longd == 'E') {
+	if (_longd == 'W') {
 		_long = -_long;
 	}
 
@@ -389,9 +405,6 @@ void NMEA::processGPGGA() {
     if (hu == NULL) return;
 	_height_units = hu[0];
 
-    if (_updateCallback != NULL) {
-        _updateCallback();
-    }
 }
 
 /*!
@@ -440,42 +453,42 @@ uint8_t NMEA::getSatellites() {
  *  Returns the current day of the month (1 ... 31).
  */
 uint8_t NMEA::getDay() {
-	return _date_d;
+	return _off_date_d;
 }
 
 /*!
  *  Returns the current month number (1 ... 12).
  */
 uint8_t NMEA::getMonth() {
-	return _date_m;
+	return _off_date_m;
 }
 
 /*!
  *  Returns the current year (2000 ... 2099).
  */
 uint16_t NMEA::getYear() {
-	return _date_y + 2000;
+	return _off_date_y + 2000;
 }
 
 /*!
  *  Returns the current hour of the day (0 ... 23).
  */
 uint8_t NMEA::getHour() {
-	return _time_h;
+	return _off_time_h;
 }
 
 /*!
  *  Returns the current minutes (0 ... 59).
  */
 uint8_t NMEA::getMinute() {
-	return _time_m;
+	return _off_time_m;
 }
 
 /*!
  *  Returns the current seconds (0 ... 59).
  */
 uint8_t NMEA::getSecond() {
-	return _time_s;
+	return _off_time_s;
 }
 
 /*!
@@ -484,9 +497,9 @@ uint8_t NMEA::getSecond() {
  */
 uint8_t NMEA::getDow() {
    static int t[] = {0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4};
-    int y = _date_y + 2000;
-    int m = _date_m;
-    int d = _date_d;
+    int y = _off_date_y + 2000;
+    int m = _off_date_m;
+    int d = _off_date_d;
 
     y -= m < 3;
     return (y + y/4 - y/100 + y/400 + t[m-1] + d) % 7;
@@ -498,19 +511,69 @@ void NMEA::csWrite(uint8_t c, uint8_t &cka, uint8_t &ckb) {
     _dev->write(c);
 }
 
+static int _ytab[2][13] = {
+    {-1, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 },
+    {-1, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 }
+};
+
+#define isleap(y) (((y) % 4) == 0 && ((y) % 100) != 0 || ((y) % 400) == 0)
+
+
 /*!
- *  Attach a callback routine which is executed whenever the
- *  GPS information is updated.
- *
- *      void myCallback() {
- *          // Do something with the GPS data
- *      }
- *
- *      myGps.onUpdate(myCallback);
+ *  Convert the time to a UNIX timestamp (seconds since 01/01/70).
  */
 
-void NMEA::onUpdate(void (*func)()) {
-    _updateCallback = func;
+uint32_t NMEA::getTimestamp() {
+    uint32_t ayear = _date_y + 2000;
+    uint32_t amonth = _date_m;
+    uint32_t tv_sec = 0;
+
+    if (_date_m > 11) return 0;
+    if (_date_d > 31) return 0;
+    if (_time_h > 23) return 0;
+    if (_time_m > 59) return 0;
+    if (_time_s > 59) return 0;
+
+    if (isleap(ayear) && amonth > 2)
+        ++tv_sec;
+
+    for (--ayear; ayear >= 1970; --ayear)
+        tv_sec += isleap(ayear) ? 366 : 365;
+
+    while (--amonth)
+        tv_sec += _ytab[0][amonth];
+
+    tv_sec += _date_d - 1;
+    tv_sec = 24 * tv_sec + _time_h;
+    tv_sec = 60 * tv_sec + _time_m;
+    tv_sec = 60 * tv_sec + _time_s;
+    return tv_sec;
+}
+
+void NMEA::setOffsetTime(int32_t offset) {
+    uint32_t secs = getTimestamp();
+    secs += (offset * 3600);
+
+    uint32_t year = 1970;
+
+    uint32_t dayclock = secs % 86400;
+    uint32_t dayno = secs / 86400;
+
+    _off_time_s = dayclock % 60;
+    _off_time_m = (dayclock % 3600) / 60;
+    _off_time_h = dayclock / 3600;
+
+    while (dayno >= (isleap(year) ? 366 : 365)) {
+        dayno -= (isleap(year) ? 366 : 365);
+        year++;
+    }
+    _off_date_y = year - 2000;
+    _off_date_m = 1;
+    while (dayno >= _ytab[isleap(year)][_off_date_m]) {
+        dayno -= _ytab[isleap(year)][_off_date_m];
+        _off_date_m++;
+    }
+    _off_date_d = dayno + 1;
 }
 
 /*! \name uBLOX NEO-6

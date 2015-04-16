@@ -67,6 +67,9 @@ class NMEA {
 
         void (*_updateCallback)();
 
+        boolean _doUpdate;
+        uint32_t _lastRx;
+        int32_t _offset;
 		
 		uint8_t _time_h;
 		uint8_t _time_m;
@@ -74,6 +77,13 @@ class NMEA {
 		uint8_t _date_d;
 		uint8_t _date_m;
 		uint8_t _date_y;
+
+		uint8_t _off_time_h;
+		uint8_t _off_time_m;
+		uint8_t _off_time_s;
+		uint8_t _off_date_d;
+		uint8_t _off_date_m;
+		uint8_t _off_date_y;
 		
 		void processMessage();
 		void processGPRMC();
@@ -85,6 +95,8 @@ class NMEA {
 		void triplet(char *, uint8_t &, uint8_t &, uint8_t &);
 
         void csWrite(uint8_t c, uint8_t &csa, uint8_t &csb);
+
+        void setOffsetTime(int32_t offset);
 
 	public:
 		NMEA();
@@ -119,7 +131,12 @@ class NMEA {
         void enableFullPower();
 
         // Event Handling
-        void onUpdate(void (*func)());
+        void onUpdate(void (*func)()) { _updateCallback = func; }
+
+        // Time conversion
+        uint32_t getTimestamp();
+
+        void setGMTOffset(int32_t o) { _offset = o; }
 
 };
 
