@@ -119,7 +119,13 @@ void NMEA::processGPVTG() {
 	_updated = true;
 
 	tok = comma(_buffer); // Discard GPVTG
+    if (tok == NULL) {
+        return;
+    }
 	while ((tok = comma())) {
+        if (tok == NULL) {
+            return;
+        }
 		type = comma();
 		if (type == NULL) {
 			return;
@@ -149,10 +155,13 @@ void NMEA::processGPRMC() {
 	char *tok;
 	_updated = true;
 	tok = comma(_buffer);
+    if (tok == NULL) return;
 	tok = comma();
+    if (tok == NULL) return;
 	triplet(tok, _time_h, _time_m, _time_s);
 	
 	tok = comma();
+    if (tok == NULL) return;
 	if (tok[0] == 'A') {
 		_ok = true;
 	} 
@@ -162,33 +171,42 @@ void NMEA::processGPRMC() {
 	}
 
 	tok = comma();
+    if (tok == NULL) return;
 	_lat = pos2dec(tok);
 	tok = comma();
+    if (tok == NULL) return;
 	if (tok[0] == 'S') {
 		_lat = -_lat;
 	}
 	_latd = tok[0];
 
 	tok = comma();
+    if (tok == NULL) return;
 	_long = pos2dec(tok);
 	tok = comma();
+    if (tok == NULL) return;
 	if (tok[0] == 'E') {
 		_long = -_long;
 	}
 	_longd = tok[0];
 
 	tok = comma();
+    if (tok == NULL) return;
 	_speedN = strtod(tok, NULL);
 
 	tok = comma();
+    if (tok == NULL) return;
 	_bearingT = strtod(tok, NULL);
 
 	tok = comma();
+    if (tok == NULL) return;
 	triplet(tok, _date_d, _date_m, _date_y);
 
 	tok = comma();
+    if (tok == NULL) return;
 	_mgvar = strtod(tok, NULL);
 	tok = comma();
+    if (tok == NULL) return;
 	_mgvard = tok[0];
 
     if (_updateCallback != NULL) {
@@ -313,28 +331,35 @@ void NMEA::processGPGGA() {
 	_updated = true;
 		
 	
-	comma(_buffer); // Discard GPGGA
+	char *tok = comma(_buffer); // Discard GPGGA
+    if (tok == NULL) return;
 
 	char *time = comma();
+    if (time == NULL) return;
 	triplet(time, _time_h, _time_m, _time_s);
 
 	char *lat = comma();
+    if (lat == NULL) return;
 	_lat = pos2dec(lat);
 	char *latd = comma();
+    if (latd == NULL) return;
 	_latd = latd[0];
 	if (_latd == 'S') {
 		_lat = -_lat;
 	}
 
 	char *longitude = comma();
+    if (longitude == NULL) return;
 	_long = pos2dec(longitude);
 	char *longd = comma();
+    if (longd == NULL) return;
 	_longd = longd[0];
 	if (_longd == 'E') {
 		_long = -_long;
 	}
 
 	char *fix = comma();
+    if (fix == NULL) return;
 	if (fix[0] == '0') {
 		_ok = false;
 	} else {
@@ -342,19 +367,26 @@ void NMEA::processGPGGA() {
 	}
 
 	char *sats = comma();
+    if (sats == NULL) return;
 	_satellites = atoi(sats);
 
 	char *hdop = comma();
+    if (hdop == NULL) return;
 	_hdop = strtod(hdop, NULL);
 
 	char *alt = comma();
+    if (alt == NULL) return;
 	_altitude = strtod(alt, NULL);
 	char *au = comma();
+    if (au == NULL) return;
+
 	_altitude_units = au[0];
 	
 	char *height = comma();
+    if (height == NULL) return;
 	_height = strtod(height, NULL);
 	char *hu = comma();
+    if (hu == NULL) return;
 	_height_units = hu[0];
 
     if (_updateCallback != NULL) {
