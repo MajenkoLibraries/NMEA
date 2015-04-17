@@ -44,7 +44,14 @@ NMEA::NMEA() {
  */
 NMEA::NMEA(Stream &dev) {
 	_dev = &dev;
+	_frameStart = false;
     _updateCallback = NULL;
+    _time_m = 0;
+    _time_h = 0;
+    _time_s = 0;
+    _date_y = 0;
+    _date_m = 0;
+    _date_d = 0;
 }
 
 /*!
@@ -53,6 +60,13 @@ NMEA::NMEA(Stream &dev) {
  */
 void NMEA::begin() {
 	_frameStart = false;
+    _updateCallback = NULL;
+    _time_m = 0;
+    _time_h = 0;
+    _time_s = 0;
+    _date_y = 0;
+    _date_m = 0;
+    _date_d = 0;
 }
 
 /*!
@@ -174,7 +188,11 @@ void NMEA::processGPRMC() {
 	tok = comma();  //                          // Time
     if (tok == NULL) return;
 	triplet(tok, _time_h, _time_m, _time_s);
-	
+
+    _time_h %= 24;
+    _time_m %= 60;
+    _time_s %= 60;
+
 	tok = comma();                              // Acquired
     if (tok == NULL) return;
 	if (tok[0] == 'A') {
@@ -216,6 +234,10 @@ void NMEA::processGPRMC() {
 	tok = comma();                              // Date
     if (tok == NULL) return;
 	triplet(tok, _date_d, _date_m, _date_y);
+
+    _date_d %= 32;
+    _date_m %= 13;
+    _date_y %= 100;
 
 	tok = comma();                              // Pressure
     if (tok == NULL) return;
@@ -353,6 +375,10 @@ void NMEA::processGPGGA() {
 	char *time = comma();       // Time
     if (time == NULL) return;
 	triplet(time, _time_h, _time_m, _time_s);
+
+    _time_h %= 24;
+    _time_m %= 60;
+    _time_s %= 60;
 
 	char *lat = comma();        // Latitude
     if (lat == NULL) return;
@@ -528,8 +554,10 @@ uint32_t NMEA::getTimestamp() {
     uint32_t amonth = _date_m;
     uint32_t tv_sec = 0;
 
-    if (_date_m > 11) return 0;
+    if (_date_m > 12) return 0;
+    if (_date_m == 0) return 0;
     if (_date_d > 31) return 0;
+    if (_date_d == 0) return 0;
     if (_time_h > 23) return 0;
     if (_time_m > 59) return 0;
     if (_time_s > 59) return 0;
