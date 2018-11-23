@@ -1,0 +1,17 @@
+{
+    "name": "NMEA",
+    "provides": "NMEA.h",
+    "license": "LICENSE.md",
+    "readme": "README.md",
+    "description": "NMEA GPS Processing Library",
+    "category": "Sensors",
+    "subcategory": "Location",
+    "maintainer": "Matt Jenkins <matt@majenko.co.uk>",
+    "version": "1.1.8",
+    "family": "all",
+    "core": "all",
+    "install": {
+        "NMEA.cpp": "/",
+        "NMEA.h": "/"
+    }
+}
